@@ -169,7 +169,7 @@ async def get_game_results(game):
     for player in players:
         player_username = await bot.get_chat_member(game['group'], player)
         player_username = player_username.user.username
-        dices = str(game[player]['dices']).replace('[', '').replace(']', '').replace(game['last_stake']['dice_value'],
+        dices = str(game[player]['dices']).replace('[', '').replace(']', '').replace(str(game['last_stake']['dice_value']),
                                                                                      f'<b>{game["last_stake"]["dice_value"]}</b>')
         results += player_username + ': ' + dices + '\n'
     return results
