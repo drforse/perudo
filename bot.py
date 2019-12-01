@@ -71,7 +71,7 @@ async def join_game(m):
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['call_liar'])
 async def stop_game(m):
     x = await actual_game.call_liar(m.chat.id, m.from_user.id)
-    await bot.send_message(m.chat.id, x)
+    await bot.send_message(m.chat.id, x, parse_mode='html')
 
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['pabort'])

@@ -39,14 +39,14 @@ async def start(chat_id, user_id):
 
 async def join(chat_id, user_id):
     if 'players' not in active_games.find_one({'group': chat_id}):
-        return 'Позови народ сначала! /start_game'
+        return 'Позови народ сначала! /perudo'
     if user_id in active_games.find_one({'group': chat_id})['players']:
-        return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!!'
+        return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!! /perudo'
     if active_games.find_one({'group': chat_id})['status'] != 'recruitment':
         return 'Мы тут уже играем, обожди!'
     active_games.update_one({'group': chat_id},
                             {'$push': {'players': user_id}})
-    return 'Еще один простак решил потерять свои деньги? Ну давай, присоединяйся.'
+    return 'Еще один простак решил потерять свои деньги? Ну давай, присоединяйся. /perudo'
 
 
 async def make_stake(chat_id, user_id, stake):
@@ -169,6 +169,7 @@ async def get_game_results(game):
     for player in players:
         player_username = await bot.get_chat_member(game['group'], player)
         player_username = player_username.user.username
-        dices = str(game[player]['dices']).replace('[', '').replace(']', '')
+        dices = str(game[player]['dices']).replace('[', '').replace(']', '').replace(game['last_stake']['dice_value'],
+                                                                                     f'<b>{game["last_stake"]["dice_value"]}</b>')
         results += player_username + ': ' + dices + '\n'
     return results
