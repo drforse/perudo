@@ -90,6 +90,7 @@ async def get_in_adventure(m):
     last_adventure = user_doc.get('last_adventure')
     if not last_adventure:
         last_adventure = 0
+    m.date = m.date.timestamp()
     if m.date - last_adventure < 60:
         await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
                                           f' осталось {(m.date - last_adventure)*60} минут')
