@@ -50,7 +50,7 @@ async def join(chat_id, user_id, bet=None):
 
     if not bet:
         creator = game['creator']
-        bet = game[creator]['bet']
+        bet = game[str(creator)]['bet']
 
     active_games.update_one({'group': chat_id},
                             {'$push': {'players': user_id}})
