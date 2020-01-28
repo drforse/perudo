@@ -35,8 +35,8 @@ async def check_group_and_user(chat_id, user_id):
 async def start_react(m):
     await check_group_and_user(m.chat.id, m.from_user.id)
 
-    await bot.send_message(m.chat.id, 'Привет, че как, я бот для игры в ПЕРУДО - Игры в кости по версии Пиратов' \
-                                      ' Карибского Моря ☠️, подробности игры Вы можете у знать в Хелпе! /help')
+    await bot.send_message(m.chat.id, 'Привет, че как, я бот для игры в ПЕРУДО - Игры в кости по версии Пиратов '
+                                      'Карибского Моря ☠️, подробности игры Вы можете у знать в Хелпе! /help')
 
 
 @dp.message_handler(commands=['stats'])
@@ -90,7 +90,11 @@ async def get_in_adventure(m):
     last_adventure = user_doc.get('last_adventure')
     if not last_adventure:
         last_adventure = 0
+    print(m.date)
+    print(m.date.timestamp())
     m.date = m.date.timestamp()
+    print(m.date)
+    print(last_adventure)
     if m.date - last_adventure < 60:
         await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
                                           f' осталось {(m.date - last_adventure)*60} минут')
@@ -156,13 +160,13 @@ async def join_game(m):
     await check_group_and_user(m.chat.id, m.from_user.id)
 
     if len(m.text.split()) != 2:
-        await bot.send_message(m.chat.id, '/pjoin <ставка>')
-        return
-    if not m.text.split()[1].isdigit():
+        text = await actual_game.join(m.chat.id, m.from_user.id)
+    elif not m.text.split()[1].isdigit():
         await bot.send_message(m.chat.id, 'Не всучивай нам эту безделицу, ставь ГОДЫ (ставка долдна быть числом)!')
         return
-    bet = m.text.split()[1]
-    text = await actual_game.join(m.chat.id, m.from_user.id, bet)
+    else:
+        bet = m.text.split()[1]
+        text = await actual_game.join(m.chat.id, m.from_user.id, bet)
     await bot.send_message(m.chat.id, text, reply_to_message_id=m.message_id)
 
 

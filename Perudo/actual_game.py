@@ -38,12 +38,19 @@ async def start(chat_id, user_id):
     await bot.send_message(chat_id, 'Делайте ваши ставки!')
 
 
-async def join(chat_id, user_id, bet):
-    if user_id in active_games.find_one({'group': chat_id})['players']:
+async def join(chat_id, user_id, bet=None):
+    game = active_games.find_one({'group': chat_id})
+    if not game:
+        return 'Игра еще не создана)0))\nСоздать: /perudo <ставка>'
+    if user_id in game['players']:
         return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!!\n' \
                'Начать: /perudo\n Присоединиться: /pjoin <ставка>'
-    if active_games.find_one({'group': chat_id})['status'] != 'recruitment':
+    if game['status'] != 'recruitment':
         return 'Мы тут уже играем, обожди!'
+
+    if not bet:
+        creator = game['creator']
+        bet = game[creator]['bet']
 
     active_games.update_one({'group': chat_id},
                             {'$push': {'players': user_id}})
@@ -51,13 +58,13 @@ async def join(chat_id, user_id, bet):
                             {'$set': {str(user_id): {'bet': int(bet)}}})
     years_left = users_col.find_one({'user_id': user_id})['years']
     if years_left == 0:
-        return 'Что, свобода надоела? Ну давай, присоединяйся.\nНачать игру: /perudo'
+        return f'Что, свобода надоела? Ну давай, присоединяйся.\nСтавка: {bet}\nНачать игру: /perudo'
     if years_left < 40:
-        return ('Что, слишком уж скоро тебе покидать Голландец, решил затянуть удовольствие? Ну давай, присоединяйся.\n'
-                'Начать игру: /perudo')
+        return (f'Что, слишком уж скоро тебе покидать Голландец, решил затянуть удовольствие? Ну давай, присоединяйся.\n'
+                f'Ставка: {bet}\nНачать игру: /perudo')
     if years_left > 40:
-        return ('Что, надеешься выиграть пару лет свободы? Ну удачи! 😈\n'
-                'Начать игру: /perudo')
+        return (f'Что, надеешься выиграть пару лет свободы? Ну удачи! 😈\n'
+                f'Ставка: {bet}\nНачать игру: /perudo')
 
 
 async def make_stake(chat_id, user_id, stake):
