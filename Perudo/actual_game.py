@@ -63,10 +63,10 @@ async def make_stake(chat_id, user_id, stake):
         elif stake['dice_quant'] == last_stake['dice_quant']:
             if stake['dice_value'] <= last_stake['dice_value']:
                 return 'Номинал кубиков должен быть выше, чем в предыдущей ставке, если количество не изменено!'
-        if stake['dice_value'] > 6:
-            return 'Кубики шестигранные, лол!'
     if stake['dice_quant'] > dices_global_quant:
         return 'Количество превышает количество кубиков на столе!'
+    if stake['dice_value'] > 6:
+        return 'Кубики шестигранные, лол!'
     player = game[str(user_id)]
     player['stake'] = stake
     active_games.update_one({'group': chat_id},
