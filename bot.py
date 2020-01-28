@@ -6,6 +6,7 @@ from aiogram.utils import exceptions
 from aiogram.utils.executor import start_webhook
 from config import active_games, users_col, groups_col, bot, dp
 from Perudo import actual_game
+import random
 
 loop = asyncio.get_event_loop()
 logging.basicConfig(level=logging.WARNING)
@@ -45,8 +46,9 @@ async def get_stats(m):
     user_doc = users_col.find_one({'user_id': m.from_user.id})
     member = await bot.get_chat_member(m.chat.id, m.from_user.id)
     name = member.user.first_name
+    years_left = user_doc["years"] if user_doc["years"] != 0 else 'Свободен!'
     stats = f'*{name}*:\n' \
-            f'Оставшиеся годы службы: {user_doc["years"]}\n' \
+            f'Оставшиеся годы службы: {years_left}\n' \
             f'Всего игр: {user_doc["games_finished"]}\n' \
             f'Проигрыши: {user_doc["loses"]}'
 
@@ -78,6 +80,36 @@ async def help(m):
            '/call_liar - обвинить предыдущего игрока во лжи\n' \
            '/pabort - Прекратить игру'
     await bot.send_message(m.chat.id, help)
+
+
+@dp.message_handler(commands=['adventure'])
+async def get_in_adventure(m):
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
+    user_doc = users_col.find_one({'user_id': m.from_user.id})
+    last_adventure = user_doc.get('last_adventure')
+    if not last_adventure:
+        last_adventure = 0
+    if m.date - last_adventure < 60:
+        await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
+                                          f' осталось {(m.date - last_adventure)*60} минут')
+        return
+
+    inc_years = random.randint(0, 150)
+    users_col.update_one({'user_id': m.from_user.id},
+                         {'&set': {'last_adventure': m.date}})
+    users_col.update_one({'user_id': m.from_user.id},
+                         {'$inc': {'years': inc_years}})
+
+    if inc_years == 0:
+        await bot.send_message(m.chat.id, 'Вы вернулись из своего очередного приключения с новыми байками и золотом!,'
+                                          'если Пасюк будет непротив, то на этот редкий случай (1/150) можно сделать, '
+                                          'чтобы в его боте скачек прибавлялось рандомное количество денег хДДДДДДДД')
+    elif user_doc['years'] == 0:
+        await bot.send_message(m.chat.id, f'По неосторожности Вы оказались на борту голландца,'
+                                          f' и должны отработать {inc_years} на его капитана!')
+    else:
+        await bot.send_message(m.chat.id, f'По неосторожности Вы прибавили себе {inc_years} на службе на борту голландца!')
 
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['perudo'])

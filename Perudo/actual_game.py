@@ -160,7 +160,7 @@ async def call_liar(chat_id, user_id):
             all_bets += bet
         else:
             all_bets += bet
-            new_years_left = years_left - bet
+            new_years_left = years_left - bet if years_left - bet >= 0 else 0
             users_col.update_one({'user_id': player},
                                  {'$set': {'years': new_years_left}})
         users_col.update_one({'user_id': player},
