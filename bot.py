@@ -91,9 +91,9 @@ async def get_in_adventure(m):
     if not last_adventure:
         last_adventure = 0
     date = m.date.timestamp()
-    if date - last_adventure < 60:
+    if date - last_adventure < 60*60:
         await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
-                                          f' осталось {(date - last_adventure)*60} минут')
+                                          f' осталось {(date - last_adventure)/60} минут')
         return
 
     inc_years = random.randint(0, 150)
@@ -108,9 +108,10 @@ async def get_in_adventure(m):
                                           'чтобы в его боте скачек прибавлялось рандомное количество денег хДДДДДДДД')
     elif user_doc['years'] == 0:
         await bot.send_message(m.chat.id, f'По неосторожности Вы оказались на борту голландца,'
-                                          f' и должны отработать {inc_years} на его капитана!')
+                                          f' и должны отработать {inc_years} лет на его капитана!')
     else:
-        await bot.send_message(m.chat.id, f'По неосторожности Вы прибавили себе {inc_years} на службе на борту голландца!')
+        await bot.send_message(m.chat.id, f'По неосторожности Вы прибавили себе {inc_years}'
+                                          f' лет на службе на борту голландца!')
 
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['perudo'])
