@@ -8,6 +8,8 @@ import os
 client = pymongo.MongoClient(os.environ['perudo_db'])
 perudo_db = client.Perudo
 active_games = perudo_db.active_games
+groups_col = perudo_db.groups
+users_col = perudo_db.users
 
 API_TOKEN = os.environ['perudo_token']
 loop = asyncio.get_event_loop()

@@ -4,7 +4,7 @@ import logging
 from aiogram import executor
 from aiogram.utils import exceptions
 from aiogram.utils.executor import start_webhook
-from config import active_games, bot, dp
+from config import active_games, users_col, groups_col, bot, dp
 from Perudo import actual_game
 
 loop = asyncio.get_event_loop()
@@ -13,14 +13,53 @@ logging.basicConfig(level=logging.WARNING)
 developers = [500238135]
 
 
+async def check_group_and_user(chat_id, user_id):
+    group = groups_col.find_one({'group_id': chat_id})
+    if not group:
+        groups_col.insert_one({'group_id': chat_id,
+                               'users': [user_id]})
+        group = groups_col.find_one({'group_id': chat_id})
+    user = users_col.find_one({'user_id': user_id})
+    if not user:
+        users_col.insert_one({'user_id': user_id,
+                              'years': 100,
+                              'games_finished': 0,
+                              'loses': 0})
+    if user_id not in group['users']:
+        groups_col.update_one({'group_id': chat_id},
+                              {'$push': {'users': user_id}})
+
+
 @dp.message_handler(commands=['start'])
 async def start_react(m):
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
     await bot.send_message(m.chat.id, 'Привет, че как, я бот для игры в ПЕРУДО - Игры в кости по версии Пиратов' \
-                                      ' Карибского Моря, подробности игры Вы можете у знать в Хелпе! /help')
+                                      ' Карибского Моря ☠️, подробности игры Вы можете у знать в Хелпе! /help')
+
+
+@dp.message_handler(commands=['stats'])
+async def get_stats(m):
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
+    user_doc = users_col.find_one({'user_id': m.from_user.id})
+    member = await bot.get_chat_member(m.chat.id, m.from_user.id)
+    name = member.user.first_name
+    stats = f'*{name}*:\n' \
+            f'Оставшиеся годы службы: {user_doc["years"]}\n' \
+            f'Всего игр: {user_doc["games_finished"]}\n' \
+            f'Проигрыши: {user_doc["loses"]}'
+
+    try:
+        await bot.send_message(m.chat.id, stats, reply_to_message_id=m.message_id, parse_mode='markdown')
+    except exceptions.MessageToReplyNotFound:
+        await bot.send_message(m.chat.id, stats, parse_mode='markdown')
 
 
 @dp.message_handler(commands=['help'])
 async def help(m):
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
     help = 'ПЕРУДО - ИГРА В КОСТИ (измененная версия "пиратов карибского моря")\n' \
            'В начале игры всем выдается по 5 кубиков, кубики подбрасываются.\n' \
            'Первый игрок называют ставку (кол-во кубиков определенного номинала на столе).' \
@@ -44,27 +83,53 @@ async def help(m):
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['perudo'])
 async def start_game(m):
     try:
-        if not active_games.find_one({'group': m.chat.id}):
-            await actual_game.open_game(m.chat.id, m.from_user.id)
+        await check_group_and_user(m.chat.id, m.from_user.id)
+
+        game_doc = active_games.find_one({'group': m.chat.id})
+        if not game_doc:
+            if len(m.text.split()) != 2:
+                await bot.send_message(m.chat.id, '/perudo <ставка>')
+                return
+            if not m.text.split()[1].isdigit():
+                await bot.send_message(m.chat.id,
+                                       'Не всучивай нам эту безделицу, ставь ГОДЫ (ставка должна быть числом)!')
+                return
+            bet = m.text.split()[1]
+            await actual_game.open_game(m.chat.id, m.from_user.id, bet)
             await bot.send_message(m.chat.id,
-                                   'Эй вы там, этот юнец хочет сыграть в кости! Кто хочет выиграть пару золотых?')
+                                   'Эй вы там, этот юнец хочет сыграть в кости! '
+                                   'Кто хочет скинуть пару лет службы на Голландце? 😈\n'
+                                   'Присоединиться: /pjoin <ставка>')
             return
-        if active_games.find_one({'group': m.chat.id})['status'] != 'recruitment':
+        if game_doc['status'] != 'recruitment':
             await bot.send_message(m.chat.id, 'Мы тут уже играем, обожди!')
             return
-        if len(active_games.find_one({'group': m.chat.id})['players']) > 1:
-            await actual_game.start(m.chat.id, m.from_user.id)
-        else:
+        if m.from_user.id not in game_doc['players']:
+            await bot.send_message(m.chat.id, 'Ты не в игре!\nПрисоединиться: /pjoin <ставка>')
+            return
+        if len(active_games.find_one({'group': m.chat.id})['players']) == 1:
             await bot.send_message(m.chat.id,
                                    'Ты со столом играть собрался? Где твои противники?',
                                    reply_to_message_id=m.message_id)
+            return
+
+        await actual_game.start(m.chat.id, m.from_user.id)
     except:
         print(traceback.format_exc())
 
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['pjoin'])
 async def join_game(m):
-    text = await actual_game.join(m.chat.id, m.from_user.id)
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
+    if len(m.text.split()) != 2:
+        await bot.send_message(m.chat.id, '/pjoin <ставка>')
+        return
+    if not m.text.split()[1].isdigit():
+        await bot.send_message(m.chat.id, 'Не всучивай нам эту безделицу, ставь ГОДЫ (ставка долдна быть числом)!')
+        return
+    bet = m.text.split()[1]
+    text = await actual_game.join(m.chat.id, m.from_user.id, bet)
     await bot.send_message(m.chat.id, text, reply_to_message_id=m.message_id)
 
 

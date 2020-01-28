@@ -1,16 +1,17 @@
-from config import active_games, bot
+from config import active_games, groups_col, users_col, bot
 from aiogram import types
 import random
 
 dices_values = [1, 2, 3, 4, 5, 6]
 
 
-async def open_game(chat_id, user_id):
+async def open_game(chat_id, user_id, bet):
     active_games.insert_one({'group': chat_id,
                              'players': [user_id],
                              'status': 'recruitment',
                              'creator': user_id,
-                             'round': 0})
+                             'round': 0,
+                             str(user_id): {'bet': int(bet)}})
 
 
 async def start(chat_id, user_id):
@@ -18,7 +19,7 @@ async def start(chat_id, user_id):
     players = game_doc['players']
     players_usernames = ''
     for player in players:
-        game_doc[str(player)] = {'dices': await flip_dices()}
+        game_doc[str(player)].update({'dices': await flip_dices()})
         member = await bot.get_chat_member(chat_id, player)
         if game_doc['creator'] == player:
             end = '(!) '
@@ -37,16 +38,26 @@ async def start(chat_id, user_id):
     await bot.send_message(chat_id, 'Делайте ваши ставки!')
 
 
-async def join(chat_id, user_id):
-    if 'players' not in active_games.find_one({'group': chat_id}):
-        return 'Позови народ сначала! /perudo'
+async def join(chat_id, user_id, bet):
     if user_id in active_games.find_one({'group': chat_id})['players']:
-        return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!! /perudo'
+        return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!!\n' \
+               'Начать: /perudo\n Присоединиться: /pjoin <ставка>'
     if active_games.find_one({'group': chat_id})['status'] != 'recruitment':
         return 'Мы тут уже играем, обожди!'
+
     active_games.update_one({'group': chat_id},
                             {'$push': {'players': user_id}})
-    return 'Еще один простак решил потерять свои деньги? Ну давай, присоединяйся. /perudo'
+    active_games.update_one({'group': chat_id},
+                            {'$set': {str(user_id): {'bet': int(bet)}}})
+    years_left = users_col.find_one({'user_id': user_id})['years']
+    if years_left == 0:
+        return 'Что, свобода надоела? Ну давай, присоединяйся.\nНачать игру: /perudo'
+    if years_left < 40:
+        return ('Что, слишком уж скоро тебе покидать Голландец, решил затянуть удовольствие? Ну давай, присоединяйся.\n'
+                'Начать игру: /perudo')
+    if years_left > 40:
+        return ('Что, надеешься выиграть пару лет свободы? Ну удачи! 😈\n'
+                'Начать игру: /perudo')
 
 
 async def make_stake(chat_id, user_id, stake):
@@ -126,16 +137,43 @@ async def call_liar(chat_id, user_id):
     for player in game['players']:
         all_dices += game[str(player)]['dices']
     count_dices = all_dices.count(last_stake['dice_value'])
-    member_lier = await bot.get_chat_member(chat_id, game['last_player'])
-    member_lier = f'@{member_lier.user.username}' if member_lier.user.username else member_lier.user.first_name
+    member_lier = await bot.get_chat_member(chat_id, last_player)
     member_prosecutor = await bot.get_chat_member(chat_id, user_id)
-    member_prosecutor = f'@{member_prosecutor.user.username}' if member_prosecutor.user.username else member_prosecutor.user.first_name
     active_games.delete_one({'group': chat_id})
     results = await get_game_results(game)
+
     if count_dices >= last_stake['dice_quant']:
-        return f'{member_lier} не врал! {member_prosecutor} проиграл!\n\n{results}'
+        loser = member_prosecutor.user
+        member_lier = f'@{member_lier.user.username}' if member_lier.user.username else member_lier.user.first_name
+        member_prosecutor = f'@{member_prosecutor.user.username}' if member_prosecutor.user.username else member_prosecutor.user.first_name
+        text = f'{member_lier} не врал! {member_prosecutor} проиграл!\n\n{results}'
     else:
-        return f'{member_lier} соврал и проиграл! {member_prosecutor} выиграл!\n\n{results}'
+        loser = member_lier.user
+        member_lier = f'@{member_lier.user.username}' if member_lier.user.username else member_lier.user.first_name
+        text = f'{member_lier} соврал и проиграл!\n\n{results}'
+
+    all_bets = 0
+    for player in game['players']:
+        years_left = users_col.find_one({'user_id': player})['years']
+        bet = game[str(player)]['bet']
+        if player == loser.id:
+            all_bets += bet
+        else:
+            all_bets += bet
+            new_years_left = years_left - bet
+            users_col.update_one({'user_id': player},
+                                 {'$set': {'years': new_years_left}})
+        users_col.update_one({'user_id': player},
+                             {'$inc': {'games_finished': 1}})
+
+    users_col.update_one({'user_id': loser.id},
+                         {'$inc': {'loses': 1}})
+    years_left = users_col.find_one({'user_id': loser.id})['years']
+    new_years_left = years_left + all_bets
+    users_col.update_one({'user_id': loser.id},
+                         {'$set': {'years': new_years_left}})
+
+    return text
 
 
 async def pabort(chat_id, user_id):
@@ -160,12 +198,10 @@ async def flip_dices():
 
 
 async def get_game_results(game):
-    print(game)
     players = {}
     for player in game['players']:
         players[str(player)] = game[str(player)]
     results = 'Кубики игроков:\n'
-    print(players)
     for player in players:
         player_username = await bot.get_chat_member(game['group'], player)
         player_username = player_username.user.username
