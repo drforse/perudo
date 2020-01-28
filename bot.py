@@ -98,7 +98,7 @@ async def get_in_adventure(m):
 
     inc_years = random.randint(0, 150)
     users_col.update_one({'user_id': m.from_user.id},
-                         {'&set': {'last_adventure': date}})
+                         {'$set': {'last_adventure': date}})
     users_col.update_one({'user_id': m.from_user.id},
                          {'$inc': {'years': inc_years}})
 
