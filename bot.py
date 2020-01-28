@@ -90,19 +90,15 @@ async def get_in_adventure(m):
     last_adventure = user_doc.get('last_adventure')
     if not last_adventure:
         last_adventure = 0
-    print(m.date)
-    print(m.date.timestamp())
-    m.date = m.date.timestamp()
-    print(m.date)
-    print(last_adventure)
-    if m.date - last_adventure < 60:
+    date = m.date.timestamp()
+    if date - last_adventure < 60:
         await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
-                                          f' осталось {(m.date - last_adventure)*60} минут')
+                                          f' осталось {(date - last_adventure)*60} минут')
         return
 
     inc_years = random.randint(0, 150)
     users_col.update_one({'user_id': m.from_user.id},
-                         {'&set': {'last_adventure': m.date}})
+                         {'&set': {'last_adventure': date}})
     users_col.update_one({'user_id': m.from_user.id},
                          {'$inc': {'years': inc_years}})
 
