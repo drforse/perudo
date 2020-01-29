@@ -93,7 +93,7 @@ async def get_in_adventure(m):
     date = m.date.timestamp()
     if date - last_adventure < 60*60:
         await bot.send_message(m.chat.id, f'Вы еще не вернулись из предыдущего приключения,'
-                                          f' осталось {int((date - last_adventure)/60)} минут')
+                                          f' осталось {int(60 - (date - last_adventure)/60)} минут')
         return
 
     inc_years = random.randint(0, 150)

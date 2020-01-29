@@ -44,7 +44,7 @@ async def join(chat_id, user_id, bet=None):
         return 'Игра еще не создана)0))\nСоздать: /perudo <ставка>'
     if user_id in game['players']:
         return 'Че ты хочешь, а? Тебя УЖЕ приняли в игру!!\n' \
-               'Начать: /perudo\n Присоединиться: /pjoin <ставка>'
+               'Начать: /perudo\nПрисоединиться: /pjoin <ставка>'
     if game['status'] != 'recruitment':
         return 'Мы тут уже играем, обожди!'
 
