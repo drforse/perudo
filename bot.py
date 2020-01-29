@@ -58,6 +58,31 @@ async def get_stats(m):
         await bot.send_message(m.chat.id, stats, parse_mode='markdown')
 
 
+@dp.message_handler(commands=['ptop'])
+async def get_top(m):
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
+    text = '*Топ-10 игроков*:\n\n'
+    top = {}
+    group_doc = groups_col.find_one({'group_id': m.chat.id})
+    users = group_doc['users']
+    n = 0
+    for user in users:
+        user_doc = users_col.find_one({'user_id': user})
+        top.update({user_doc['years']: user})
+        n += 1
+        if n == 10:
+            break
+
+    n = 1
+    for years_value in sorted(top.keys()):
+        member = await bot.get_chat_member(m.chat.id, top[years_value])
+        text += f'{n}. {member.user.first_name} ({years_value})'
+        n += 1
+
+    await bot.send_message(m.chat.id, text, parse_mode='markdown')
+
+
 @dp.message_handler(commands=['help'])
 async def help(m):
     await check_group_and_user(m.chat.id, m.from_user.id)
