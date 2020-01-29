@@ -73,11 +73,11 @@ async def get_top(m):
     n = 1
     list_top = list(top.items())
     list_top.sort(key=lambda i: i[1])
-    for years_value in list_top:
+    for pair in list_top:
         if n == 10:
             break
-        member = await bot.get_chat_member(m.chat.id, top[years_value])
-        text += f'{n}. {member.user.first_name} ({years_value})\n'
+        member = await bot.get_chat_member(m.chat.id, pair[0])
+        text += f'{n}. {member.user.first_name} ({pair[1]})\n'
         n += 1
 
     await bot.send_message(m.chat.id, text, parse_mode='markdown')
