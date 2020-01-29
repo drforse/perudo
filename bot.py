@@ -63,8 +63,6 @@ async def get_stats(m):
 
 @dp.message_handler(commands=['ptop'])
 async def get_top(m):
-    await check_group_and_user(m.chat.id, m.from_user.id)
-
     text = '*Топ-10 игроков*:\n\n'
     top = {}
     group_doc = groups_col.find_one({'group_id': m.chat.id})
@@ -89,8 +87,6 @@ async def get_top(m):
 
 @dp.message_handler(commands=['help'])
 async def help(m):
-    await check_group_and_user(m.chat.id, m.from_user.id)
-
     help = 'ПЕРУДО - ИГРА В КОСТИ (измененная версия "пиратов карибского моря")\n' \
            'В начале игры всем выдается по 5 кубиков, кубики подбрасываются.\n' \
            'Первый игрок называют ставку (кол-во кубиков определенного номинала на столе).' \
@@ -146,10 +142,10 @@ async def get_in_adventure(m):
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['perudo'])
 async def start_game(m):
     try:
-        await check_group_and_user(m.chat.id, m.from_user.id)
-
         game_doc = active_games.find_one({'group': m.chat.id})
         if not game_doc:
+            await check_group_and_user(m.chat.id, m.from_user.id)
+
             if len(m.text.split()) != 2:
                 await bot.send_message(m.chat.id, '/perudo <ставка>')
                 return
@@ -183,8 +179,6 @@ async def start_game(m):
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['pjoin'])
 async def join_game(m):
-    await check_group_and_user(m.chat.id, m.from_user.id)
-
     if len(m.text.split()) != 2:
         text = await actual_game.join(m.chat.id, m.from_user.id)
     elif not m.text.split()[1].isdigit():
@@ -193,6 +187,9 @@ async def join_game(m):
     else:
         bet = m.text.split()[1]
         text = await actual_game.join(m.chat.id, m.from_user.id, bet)
+
+    await check_group_and_user(m.chat.id, m.from_user.id)
+
     await bot.send_message(m.chat.id, text, reply_to_message_id=m.message_id)
 
 
