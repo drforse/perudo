@@ -77,6 +77,7 @@ async def get_top(m):
         if n == 10:
             break
         member = await bot.get_chat_member(m.chat.id, pair[0])
+        stat = pair[1] if pair[1] != 0 else 'свободен'
         text += f'{n}. {member.user.first_name} ({pair[1]})\n'
         n += 1
 
