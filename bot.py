@@ -22,7 +22,7 @@ async def check_group_and_user(chat_id, user_id):
                               'games_finished': 0,
                               'loses': 0})
     grp = await bot.get_chat(chat_id)
-    if grp.status == 'private':
+    if grp.type == 'private':
         return
     group = groups_col.find_one({'group_id': chat_id})
     if not group:
