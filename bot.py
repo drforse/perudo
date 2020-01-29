@@ -74,11 +74,11 @@ async def get_top(m):
     list_top = list(top.items())
     list_top.sort(key=lambda i: i[1])
     for pair in list_top:
-        if n == 10:
-            break
         member = await bot.get_chat_member(m.chat.id, pair[0])
         stat = pair[1] if pair[1] != 0 else 'свободен'
         text += f'{n}. {member.user.first_name} ({stat})\n'
+        if n == 10:
+            break
         n += 1
 
     await bot.send_message(m.chat.id, text, parse_mode='markdown')
