@@ -77,7 +77,7 @@ async def get_top(m):
     n = 1
     for years_value in sorted(top.keys()):
         member = await bot.get_chat_member(m.chat.id, top[years_value])
-        text += f'{n}. {member.user.first_name} ({years_value})'
+        text += f'{n}. {member.user.first_name} ({years_value})\n'
         n += 1
 
     await bot.send_message(m.chat.id, text, parse_mode='markdown')
