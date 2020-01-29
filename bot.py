@@ -78,7 +78,7 @@ async def get_top(m):
             break
         member = await bot.get_chat_member(m.chat.id, pair[0])
         stat = pair[1] if pair[1] != 0 else 'свободен'
-        text += f'{n}. {member.user.first_name} ({pair[1]})\n'
+        text += f'{n}. {member.user.first_name} ({stat})\n'
         n += 1
 
     await bot.send_message(m.chat.id, text, parse_mode='markdown')
