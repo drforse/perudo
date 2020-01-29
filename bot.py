@@ -111,7 +111,7 @@ async def get_in_adventure(m):
                                           f' и должны отработать {inc_years} лет на его капитана!')
     else:
         await bot.send_message(m.chat.id, f'По неосторожности Вы прибавили себе {inc_years}'
-                                          f' лет на службе на борту голландца!')
+                                          f' лет службы на борту голландца!')
 
 
 @dp.message_handler(lambda m: m.chat.type != 'private', commands=['perudo'])
