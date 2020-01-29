@@ -66,16 +66,16 @@ async def get_top(m):
     top = {}
     group_doc = groups_col.find_one({'group_id': m.chat.id})
     users = group_doc['users']
-    n = 0
     for user in users:
         user_doc = users_col.find_one({'user_id': user})
-        top.update({user_doc['years']: user})
-        n += 1
-        if n == 10:
-            break
+        top.update({user: user_doc['years']})
 
     n = 1
-    for years_value in sorted(top.keys()):
+    list_top = list(top.items())
+    list_top.sort(key=lambda i: i[1])
+    for years_value in list_top:
+        if n == 10:
+            break
         member = await bot.get_chat_member(m.chat.id, top[years_value])
         text += f'{n}. {member.user.first_name} ({years_value})\n'
         n += 1
