@@ -1,37 +1,12 @@
 import traceback
-import asyncio
 import logging
-from aiogram import executor
-from aiogram.utils import exceptions
-from aiogram.utils.executor import start_webhook
-from config import active_games, users_col, groups_col, bot, dp
-from Perudo import actual_game
 import random
 
-loop = asyncio.get_event_loop()
-logging.basicConfig(level=logging.WARNING)
+from aiogram.utils import exceptions
 
-developers = [500238135]
-
-
-async def check_group_and_user(chat_id, user_id):
-    user = users_col.find_one({'user_id': user_id})
-    if not user:
-        users_col.insert_one({'user_id': user_id,
-                              'years': 100,
-                              'games_finished': 0,
-                              'loses': 0})
-    grp = await bot.get_chat(chat_id)
-    if grp.type == 'private':
-        return
-    group = groups_col.find_one({'group_id': chat_id})
-    if not group:
-        groups_col.insert_one({'group_id': chat_id,
-                               'users': [user_id]})
-        group = groups_col.find_one({'group_id': chat_id})
-    if user_id not in group['users']:
-        groups_col.update_one({'group_id': chat_id},
-                              {'$push': {'users': user_id}})
+from .config import active_games, users_col, groups_col, bot, dp
+from .utils import check_group_and_user
+from .Perudo import actual_game
 
 
 @dp.message_handler(commands=['start'])
@@ -87,7 +62,7 @@ async def get_top(m):
 
 @dp.message_handler(commands=['help'])
 async def help(m):
-    help = 'ПЕРУДО - ИГРА В КОСТИ (измененная версия "пиратов карибского моря")\n' \
+    help_text = 'ПЕРУДО - ИГРА В КОСТИ (измененная версия "пиратов карибского моря")\n' \
            'В начале игры всем выдается по 5 кубиков, кубики подбрасываются.\n' \
            'Первый игрок называют ставку (кол-во кубиков определенного номинала на столе).' \
            'Кол-во кубиков в ставке ограничивается количеством кубиков на столе.\n'\
@@ -104,7 +79,7 @@ async def help(m):
            '/pjoin - присоедениться к игре\n' \
            '/call_liar - обвинить предыдущего игрока во лжи\n' \
            '/pabort - Прекратить игру'
-    await bot.send_message(m.chat.id, help)
+    await bot.send_message(m.chat.id, help_text)
 
 
 @dp.message_handler(commands=['adventure'])
@@ -223,5 +198,3 @@ async def get_stake(m):
 @dp.callback_query_handler(lambda c: c.data == 'dices')
 async def get_dices(c):
     await actual_game.show_dices(c.id, c.message.chat.id, c.from_user.id)
-
-executor.start_polling(dp, loop=loop, skip_updates=True)

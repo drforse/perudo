@@ -1,9 +1,10 @@
-import pymongo
-from aiogram import Bot, types, executor
-from aiogram.dispatcher import Dispatcher
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import asyncio
 import os
+
+import pymongo
+from aiogram import Bot
+from aiogram.dispatcher import Dispatcher
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 client = pymongo.MongoClient(os.environ['perudo_db'])
 perudo_db = client.Perudo

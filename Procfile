@@ -1,1 +1,1 @@
-bot: python bot.py
+bot: python -m perudo_bot

@@ -1,6 +1,8 @@
-from config import active_games, groups_col, users_col, bot
-from aiogram import types
 import random
+
+from aiogram import types
+
+from ..config import active_games, groups_col, users_col, bot
 
 dices_values = [1, 2, 3, 4, 5, 6]
 
